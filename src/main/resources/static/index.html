@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <style>
+        #board {
+            display: grid;
+            grid-template-columns: 0fr 0fr 0fr 0fr;
+            padding: 10px;
+        }
+        .grid-item {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            height: 86px;
+            width: 86px;
+            font-size: 40px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .solutionWord {
+
+        }
+    </style>
+    <script type="text/javascript" src="jquery-3.4.1.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            for (var row = 0;row < 4;row++) {
+                for (var col = 0;col < 4;col++) {
+                    $("#board").append('<input maxlength="1" class="grid-item" id="grid-cell' + row + col + '"></input>');
+                    $('#grid-cell' + row + col).data("location", {
+                        x: row,
+                        y: col
+                    });
+                }
+            }
+
+            $("#solvebtn").click(function() {
+                // clear any message currently displayed to the user
+                $('#message').html('');
+
+                var populatedBoard = [];
+                for (var row = 0;row < 4;row++) {
+                    populatedBoard[row] = [];
+                }
+
+                var cells = $('#board').children();
+                for (var index = 0;index < cells.length;index++) {
+                    var cellId = '#' + cells[index].id;
+                    var x_coord = $(cellId).data('location').x;
+                    var y_coord = $(cellId).data('location').y;
+                    if (cells[index].value === "") {
+                        // break loop and display warning to user that all tiles need to be populated before continuing
+                        $('#message').append('Every tile needs to be filled before this puzzle can be solved!');
+                        break;
+                    }
+                    populatedBoard[x_coord][y_coord] = cells[index].value;
+                }
+
+                $.ajax({
+                    url:"/boggle/solve",
+                    method: 'POST',
+                    data: JSON.stringify(populatedBoard),
+                    dataType:'json',
+                    contentType: "application/json; charset=utf-8"
+                }).done(function(data, textStatus, jqXHR) {
+                    console.log("success!");
+                    for (var i = 0;i < data.length;i++) {
+                        $('#words').append('<div class="solutionWord">' + data[i] + '</div>');
+                    }
+                }).fail(function(jqXHR, textStatus, errorThrown) {
+                    console.log("fail womp womp womp");
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Boggle Solver</h1>
+    <button id="solvebtn">Solve!</button><div id="message"></div>
+    <div id="board"></div>
+    <div id="words"></div>
+</body>
+</html>
