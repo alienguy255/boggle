@@ -18,6 +18,10 @@ public class WordFinder {
 
     private final WordTrie wordTrie;
 
+    /**
+     * Direction enum with a function given a tiles coordinates will return the adjacent tile for the specific direction.
+     * For example NORTH given coords (2,2) would return (1, 2).
+     */
     private enum Direction {
         NORTH_WEST((row, col) -> new RowColumn(row - 1, col - 1)),
         NORTH((row, col) -> new RowColumn(row - 1, col)),
@@ -35,6 +39,13 @@ public class WordFinder {
         }
     }
 
+    /**
+     * Finds all known words on the given board or characters.
+     * NOTE: a list is used here in the case when the same word is found from different paths
+     *
+     * @param board board of characters
+     * @return foundWords list of words found on the given board
+     */
     List<String> findWords(char[][] board) {
         List<FoundWord> foundWords = new ArrayList<>();
         for (int row = 0;row < board.length;row++) {
@@ -52,39 +63,40 @@ public class WordFinder {
     }
 
     private void findWords(char[][] board, int row, int col, List<FoundWord> foundWords) {
-        findWords(board, new HashMap<>(), row, col, "", foundWords, "");
+        // for the given coords, search adjacent tiles starting with no visited tiles and an empty candidate word that
+        // will be constructed as tiles are searched
+        searchAdjacentTiles(board, new HashMap<>(), row, col, "", foundWords, "");
     }
 
-    private void findWords(char[][] board, HashMap<RowColumn, Boolean> visited, int row, int col, String partialWord, List<FoundWord> foundWords, String pathString) {
+    private void searchAdjacentTiles(char[][] board, HashMap<RowColumn, Boolean> visitedByRowCol, int row, int col, String partialWord,
+                                     List<FoundWord> foundWords, String pathString) {
+        RowColumn currentTileRowCol = new RowColumn(row, col);
+
         // mark the current tile as visited:
-        visited.put(new RowColumn(row, col), true);
+        visitedByRowCol.put(currentTileRowCol, true);
 
         // add the current positions letter:
         String candidateWord = partialWord + board[row][col];
 
-        String updatedPathString;
         if (isKnownWord(candidateWord)) {
             // found a known word, add it to the found words list
-            updatedPathString = pathString + "(" + row + ", " + col + ")";
-
-            // NOTE: a list is used here in the case when the same word is found from different paths
-            foundWords.add(new FoundWord(candidateWord.toLowerCase(), updatedPathString));
+            foundWords.add(new FoundWord(candidateWord.toLowerCase(), pathString + "(" + row + ", " + col + ")"));
         }
 
         if (isPrefix(candidateWord)) {
             // word is a prefix to a known word, keep searching
-            updatedPathString = pathString + "(" + row + ", " + col + ") --> ";
             for (Direction dir : Direction.values()) {
                 // visit each adjacent tile that has not already been visited
                 RowColumn rowCol = dir.directionCoordFunction.apply(row, col);
-                if (isWithinBorder(board, rowCol.row, rowCol.column) && !isVisited(visited, rowCol)) {
-                    findWords(board, visited, rowCol.row, rowCol.column, candidateWord, foundWords, updatedPathString);
+                if (isWithinBorder(board, rowCol.row, rowCol.column) && !isVisited(visitedByRowCol, rowCol)) {
+                    searchAdjacentTiles(board, visitedByRowCol, rowCol.row, rowCol.column, candidateWord, foundWords,
+                                        pathString + "(" + row + ", " + col + ") --> ");
                 }
             }
         }
 
         // set visited to false in order for next adjacent tile to be considered in search
-        visited.put(new RowColumn(row, col), false);
+        visitedByRowCol.put(currentTileRowCol, false);
     }
 
     private boolean isVisited(Map<RowColumn, Boolean> visitedMap, RowColumn rowColumn) {
