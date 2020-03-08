@@ -13,6 +13,10 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+/**
+ * Inspiration and info about Tries was referenced at https://medium.com/basecs/trying-to-understand-tries-3ec6bede0014.
+ * Article suggests using array indexes for letters, but instead a map of characters to nodes was used.
+ */
 @Slf4j
 @Component
 public class WordTrie {
@@ -67,6 +71,8 @@ public class WordTrie {
     public void loadWords() {
         // dictionary downloaded from https://www.karamasoft.com/UltimateSpell/Dictionary.aspx
         // there seems to be a lot of junk words in this dictionary file, but better than most i found
+        // Another dictionary word file was downloaded from https://github.com/dwyl/english-words, (words.txt)
+        // but the results from that file were worse so i switched back to "en-US.dic"
         InputStream wordsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("en-US.dic");
         if (wordsStream == null) {
             throw new IllegalStateException("Words text file could not be loaded");

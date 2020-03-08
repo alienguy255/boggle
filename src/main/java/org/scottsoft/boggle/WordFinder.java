@@ -109,6 +109,7 @@ public class WordFinder {
 
     private boolean isKnownWord(String word) {
         // only check for validity of word if it contains 3 or more characters, according to Boggle rules
+        // referenced rules: https://www.fgbradleys.com/rules/Boggle.pdf
         return word.length() >= 3 && wordTrie.isKnown(word.toLowerCase());
     }
 
