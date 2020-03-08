@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import lombok.*;
@@ -19,23 +19,22 @@ public class WordFinder {
     private final WordTrie wordTrie;
 
     private enum Direction {
-        NORTH_WEST(rowColumn -> new RowColumn(rowColumn.row - 1, rowColumn.column - 1)),
-        NORTH(rowColumn -> new RowColumn(rowColumn.row - 1, rowColumn.column)),
-        NORTH_EAST(rowColumn -> new RowColumn(rowColumn.row - 1, rowColumn.column + 1)),
-        EAST(rowColumn -> new RowColumn(rowColumn.row, rowColumn.column + 1)),
-        SOUTH_EAST(rowColumn -> new RowColumn(rowColumn.row + 1, rowColumn.column + 1)),
-        SOUTH(rowColumn -> new RowColumn(rowColumn.row + 1, rowColumn.column)),
-        SOUTH_WEST(rowColumn -> new RowColumn(rowColumn.row + 1, rowColumn.column - 1)),
-        WEST(rowColumn -> new RowColumn(rowColumn.row, rowColumn.column - 1));
+        NORTH_WEST((row, col) -> new RowColumn(row - 1, col - 1)),
+        NORTH((row, col) -> new RowColumn(row - 1, col)),
+        NORTH_EAST((row, col) -> new RowColumn(row - 1, col + 1)),
+        EAST((row, col) -> new RowColumn(row, col + 1)),
+        SOUTH_EAST((row, col) -> new RowColumn(row + 1, col + 1)),
+        SOUTH((row, col) -> new RowColumn(row + 1, col)),
+        SOUTH_WEST((row, col) -> new RowColumn(row + 1, col - 1)),
+        WEST((row, col) -> new RowColumn(row, col - 1));
 
-        private final Function<RowColumn, RowColumn> directionCoordFunction;
+        private final BiFunction<Integer, Integer, RowColumn> directionCoordFunction;
 
-        Direction(Function<RowColumn, RowColumn> directionCoordFunction) {
+        Direction(BiFunction<Integer, Integer, RowColumn> directionCoordFunction) {
             this.directionCoordFunction = directionCoordFunction;
         }
     }
 
-    // TODO: consider returning path of found word?
     List<String> findWords(char[][] board) {
         List<FoundWord> foundWords = new ArrayList<>();
         for (int row = 0;row < board.length;row++) {
@@ -45,8 +44,10 @@ public class WordFinder {
         }
 
         return foundWords.stream()
-            .peek(word -> log.info("Found word={}, path={}", word.getFoundWord(), word.getPath()))
+            .peek(fw -> log.debug("Found word={}, path={}", fw.getFoundWord(), fw.getPath()))
             .map(FoundWord::getFoundWord)
+            // remove duplicates for values returned to client
+            .distinct()
             .collect(Collectors.toList());
     }
 
@@ -67,7 +68,7 @@ public class WordFinder {
             updatedPathString = pathString + "(" + row + ", " + col + ")";
 
             // NOTE: a list is used here in the case when the same word is found from different paths
-            foundWords.add(new FoundWord(candidateWord, updatedPathString));
+            foundWords.add(new FoundWord(candidateWord.toLowerCase(), updatedPathString));
         }
 
         if (isPrefix(candidateWord)) {
@@ -75,13 +76,14 @@ public class WordFinder {
             updatedPathString = pathString + "(" + row + ", " + col + ") --> ";
             for (Direction dir : Direction.values()) {
                 // visit each adjacent tile that has not already been visited
-                RowColumn rowCol = dir.directionCoordFunction.apply(new RowColumn(row, col));
-                if (isWithinBoardBorder(board, rowCol.row, rowCol.column) && !isVisited(visited, rowCol)) {
+                RowColumn rowCol = dir.directionCoordFunction.apply(row, col);
+                if (isWithinBorder(board, rowCol.row, rowCol.column) && !isVisited(visited, rowCol)) {
                     findWords(board, visited, rowCol.row, rowCol.column, candidateWord, foundWords, updatedPathString);
                 }
             }
         }
 
+        // set visited to false in order for next adjacent tile to be considered in search
         visited.put(new RowColumn(row, col), false);
     }
 
@@ -89,7 +91,7 @@ public class WordFinder {
         return visitedMap.getOrDefault(rowColumn, false);
     }
 
-    private boolean isWithinBoardBorder(char[][] board, Integer row, Integer col) {
+    private boolean isWithinBorder(char[][] board, Integer row, Integer col) {
         return row >= 0 && row < board.length && col >=0 && col < board[row].length;
     }
 

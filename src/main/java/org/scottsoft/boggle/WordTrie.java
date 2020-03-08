@@ -65,6 +65,8 @@ public class WordTrie {
 
     @PostConstruct
     public void loadWords() {
+        // dictionary downloaded from https://www.karamasoft.com/UltimateSpell/Dictionary.aspx
+        // there seems to be a lot of junk words in this dictionary file, but better than most i found
         InputStream wordsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("en-US.dic");
         if (wordsStream == null) {
             throw new IllegalStateException("Words text file could not be loaded");

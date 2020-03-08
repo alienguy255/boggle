@@ -31,4 +31,21 @@ public class WordTrieTest {
         assertTrue(wordTrie.isKnown("horror"));
     }
 
+    @Test
+    void testSingularAndPlural() {
+        WordTrie wordTrie = new WordTrie();
+        wordTrie.add("boat");
+        wordTrie.add("boats");
+
+        assertTrue(wordTrie.isKnown("boat"));
+        assertTrue(wordTrie.isKnown("boats"));
+    }
+
+    @Test
+    void testEmptyTrie() {
+        WordTrie wordTrie = new WordTrie();
+        assertFalse(wordTrie.isKnown("house"));
+        assertFalse(wordTrie.isKnown("cat"));
+    }
+
 }
